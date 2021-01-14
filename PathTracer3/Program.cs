@@ -20,7 +20,7 @@ namespace PathTracer3
 			var rng = new Rng();
 			var nbSamples = (args.Length > 0) ? int.Parse(args[0]) / 4 : defaultSample;
 			
-			Console.WriteLine($"Starting {startTime.Date}");
+			Console.WriteLine($"Starting {startTime}");
 
 			var eye = new Vector3(50, 52, 295.6);
 			var gaze = new Vector3(0, -0.042612, -1).Normalize();
@@ -33,7 +33,12 @@ namespace PathTracer3
 			}
 
 			Parallel.For(0, height, y => RenderFunc(y, width, height, nbSamples, eye, gaze, cx, cy, vList, rng));
-
+			//Uncomment for single thread
+			/*for (int i = 0; i < height; ++i)
+			{
+				RenderFunc(i, width, height, nbSamples, eye, gaze, cx, cy, vList, rng);
+			}
+			*/
 			ImageIO.WritePPM(width, height, vList);
 			Console.WriteLine($"\nRun time : {(DateTime.Now - startTime).Seconds} seconds");
 		}
@@ -83,13 +88,13 @@ namespace PathTracer3
 		};
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-		private static bool Intersect(Ray ray, out int id) {
+		private static bool Intersect(ref Ray ray, out int id) {
 			id = 0;
 			var hit = false;
 			
 			for (var i = 0; i < Spheres.Length; ++i)
 			{
-				if (!Spheres[i].Intersect(ray)) continue;
+				if (!Spheres[i].Intersect(ref ray)) continue;
 				hit = true;
 				id = i;
 			}
@@ -100,7 +105,7 @@ namespace PathTracer3
 		[SuppressMessage("ReSharper", "HeapView.DelegateAllocation")]
 		[SuppressMessage("ReSharper", "HeapView.ClosureAllocation")]
 		public static bool Intersect(Ray ray) => 
-			Spheres.Any(t => t.Intersect(ray));
+			Spheres.Any(t => t.Intersect(ref ray));
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 		private static Vector3 Radiance(Ray ray, Rng rng) {
@@ -109,7 +114,7 @@ namespace PathTracer3
 			var f = new Vector3(1.0);
 
 			while (true) {
-				if (!Intersect(ray, out var id)) {
+				if (!Intersect(ref ray, out var id)) {
 					return l;
 				}
 

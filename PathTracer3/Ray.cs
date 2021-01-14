@@ -2,7 +2,7 @@
 
 namespace PathTracer3
 {
-    public class Ray
+    public struct Ray
     {
         public Ray(Vector3 origin, Vector3 direction, double tmin = 0.0, double tmax = double.PositiveInfinity, int depth = 0)
         {

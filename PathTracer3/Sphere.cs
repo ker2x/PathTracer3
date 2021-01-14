@@ -2,7 +2,7 @@
 
 namespace PathTracer3
 {
-    public class Sphere
+    public readonly struct Sphere
     {
         public enum MaterialType
         {
@@ -28,7 +28,7 @@ namespace PathTracer3
         public Vector3 Color { get; }
         public MaterialType Material { get; }
 
-        public bool Intersect(Ray ray)
+        public bool Intersect(ref Ray ray)
         {
             var op = Position - ray.Origin;
             var dop = ray.Direction.Dot(op);
@@ -41,16 +41,16 @@ namespace PathTracer3
             var tmin = dop - sqrtD;
             if (ray.Tmin < tmin && tmin < ray.Tmax)
             {
-                ray.Tmax = tmin;
-                return true;
+                    ray.Tmax = tmin;
+                    return true;
             }
 
             var tmax = dop + sqrtD;
             // ReSharper disable once InvertIf
             if (ray.Tmin < tmax && tmax < ray.Tmax)
             {
-                ray.Tmax = tmax;
-                return true;
+                    ray.Tmax = tmax;
+                    return true;
             }
 
             return false;
