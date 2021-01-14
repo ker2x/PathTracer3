@@ -6,11 +6,11 @@ namespace PathTracer3
     {
         public Ray(Vector3 origin, Vector3 direction, double tmin = 0.0, double tmax = double.PositiveInfinity, int depth = 0)
         {
-            this.Origin = origin;
-            this.Direction = direction;
-            this.Tmin = tmin;
-            this.Tmax = tmax;
-            this.Depth = depth;
+            Origin = origin;
+            Direction = direction;
+            Tmin = tmin;
+            Tmax = tmax;
+            Depth = depth;
         }
 
         public Vector3 Origin { get; }

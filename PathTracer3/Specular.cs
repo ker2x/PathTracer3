@@ -5,7 +5,7 @@ namespace PathTracer3
     public static class Specular
     {
         private static double Reflectance0(double n1, double n2) => 
-            ((n1 - n2) / (n1 + n2)) * ((n1 - n2) / (n1 + n2));
+            (n1 - n2) / (n1 + n2) * ((n1 - n2) / (n1 + n2));
 
         private static double SchlickReflectance(double n1, double n2, double c)
         {

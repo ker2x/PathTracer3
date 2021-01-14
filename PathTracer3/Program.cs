@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Runtime.CompilerServices;
 
 namespace PathTracer3
 {
-    internal class Program
+    internal static class Program
     {
 		private static void Main(string[] args)
 		{
@@ -24,15 +26,15 @@ namespace PathTracer3
 			var gaze = new Vector3(0, -0.042612, -1).Normalize();
 			var cx = new Vector3(width * fov / height, 0.0, 0.0);
 			var cy = (cx.Cross(gaze)).Normalize() * fov;
-			var ls = new Vector3[width * height];
+			var vList = new Vector3[width * height];
 			
 			for (var index = 0; index < width * height; ++index) {
-				ls[index] = new Vector3();
+				vList[index] = new Vector3();
 			}
 
-			Parallel.For(0, height, y => RenderFunc(y, width, height, nbSamples, eye, gaze, cx, cy, ls, rng));
+			Parallel.For(0, height, y => RenderFunc(y, width, height, nbSamples, eye, gaze, cx, cy, vList, rng));
 
-			ImageIO.WritePPM(width, height, ls);
+			ImageIO.WritePPM(width, height, vList);
 			Console.WriteLine($"\nRun time : {(DateTime.Now - startTime).Seconds} seconds");
 		}
 
@@ -40,12 +42,13 @@ namespace PathTracer3
 		private static void RenderFunc(int y, int w, int h, int nbSamples,
 			                           Vector3 eye, Vector3 gaze,
 									   Vector3 cx,  Vector3 cy,
-									   Vector3[] Ls, Rng rng) {
+									   IList<Vector3> vList, Rng rng) {
 
+			var luminance = new Vector3();
 			for (var x = 0; x < w; ++x) {									// row
 				for (int sy = 0, i = (h - 1 - y) * w + x; sy < 2; ++sy) {	//column
 					for (var sx = 0; sx < 2; ++sx) {						//subpixel row
-						var L = new Vector3();
+						luminance.Zero();
 						for (var s = 0; s < nbSamples; ++s) {				//subpixel column
 							var u1 = 2.0 * rng.UniformFloat();
 							var u2 = 2.0 * rng.UniformFloat();
@@ -53,13 +56,12 @@ namespace PathTracer3
 							var dy = u2 < 1 ? Math.Sqrt(u2) - 1.0 : 1.0 - Math.Sqrt(2.0 - u2);
 							var d = cx * (((sx + 0.5 + dx) / 2 + x) / w - 0.5) +
 							        cy * (((sy + 0.5 + dy) / 2 + y) / h - 0.5) + gaze;
-							L += Radiance(new Ray(eye + d * 130, d.Normalize(), Sphere.EpsilonSphere), rng) * (1.0 / nbSamples);
+							luminance += Radiance(new Ray(eye + d * 130, d.Normalize(), Sphere.EpsilonSphere), rng) * (1.0 / nbSamples);
 						}
-						Ls[i] += 0.25 * Vector3.Clamp(L);
+						vList[i] += 0.25 * Vector3.Clamp(luminance);
 					}
 				}
 			}
-
 		}
 
 		// Scene
@@ -83,6 +85,7 @@ namespace PathTracer3
 		private static bool Intersect(Ray ray, out int id) {
 			id = 0;
 			var hit = false;
+			
 			for (var i = 0; i < Spheres.Length; ++i) {
 				if (Spheres[i].Intersect(ray)) {
 					hit = true;
@@ -92,36 +95,30 @@ namespace PathTracer3
 			return hit;
 		}
 
-		public static bool Intersect(Ray ray)
-		{
-			for (var index = 0; index < Spheres.Length; index++)
-			{
-				var t = Spheres[index];
-				if (t.Intersect(ray)) return true;
-			}
-			return false;
-		}
+		[SuppressMessage("ReSharper", "UnusedMember.Global")]
+		public static bool Intersect(Ray ray) => 
+			Spheres.Any(t => t.Intersect(ray));
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-		public static Vector3 Radiance(Ray ray, Rng rng) {
-			var r = ray;
+		private static Vector3 Radiance(Ray ray, Rng rng) {
+			//var ray = ray;
 			var l = new Vector3();
 			var f = new Vector3(1.0);
 
 			while (true) {
-				if (!Intersect(r, out var id)) {
+				if (!Intersect(ray, out var id)) {
 					return l;
 				}
 
 				var shape = Spheres[id];
-				var p = r.Eval(r.Tmax);
+				var p = ray.Eval(ray.Tmax);
 				var n = (p - shape.Position).Normalize();
 
 				l += f * shape.Emission;
 				f *= shape.Color;
 
 				// Russian roulette
-				if (r.Depth > 4) {
+				if (ray.Depth > 4) {
 					var continueProbability = shape.Color.Max();
 					if (rng.UniformFloat() >= continueProbability) {
 						return l;
@@ -132,24 +129,24 @@ namespace PathTracer3
 				// Next path segment
 				switch (shape.Material) {
 					case Sphere.MaterialType.Specular: {
-							var d = Specular.IdealSpecularReflect(r.Direction, n);
-							r = new Ray(p, d, Sphere.EpsilonSphere, double.PositiveInfinity, r.Depth + 1);
+							var d = Specular.IdealSpecularReflect(ray.Direction, n);
+							ray = new Ray(p, d, Sphere.EpsilonSphere, double.PositiveInfinity, ray.Depth + 1);
 							break;
 						}
 					case Sphere.MaterialType.Refractive: {
-							var d = Specular.IdealSpecularTransmit(r.Direction, n, RefractiveIndexOut, RefractiveIndexIn, out var pr, rng);
+							var d = Specular.IdealSpecularTransmit(ray.Direction, n, RefractiveIndexOut, RefractiveIndexIn, out var pr, rng);
 							f *= pr;
-							r = new Ray(p, d, Sphere.EpsilonSphere, double.PositiveInfinity, r.Depth + 1);
+							ray = new Ray(p, d, Sphere.EpsilonSphere, double.PositiveInfinity, ray.Depth + 1);
 							break;
 						}
 					default: {
-							var w = n.Dot(r.Direction) < 0 ? n : -n;
+							var w = n.Dot(ray.Direction) < 0 ? n : -n;
 							var u = ((Math.Abs(w.X) > 0.1 ? new Vector3(0.0, 1.0, 0.0) : new Vector3(1.0, 0.0, 0.0)).Cross(w)).Normalize();
 							var v = w.Cross(u);
 
-							var sample_d = Sampling.CosineWeightedSampleOnHemisphere(rng.UniformFloat(), rng.UniformFloat());
-							var d = (sample_d.X * u + sample_d.Y * v + sample_d.Z * w).Normalize();
-							r = new Ray(p, d, Sphere.EpsilonSphere, double.PositiveInfinity, r.Depth + 1);
+							var sampleDistance = Sampling.CosineWeightedSampleOnHemisphere(rng.UniformFloat(), rng.UniformFloat());
+							var distance = (sampleDistance.X * u + sampleDistance.Y * v + sampleDistance.Z * w).Normalize();
+							ray = new Ray(p, distance, Sphere.EpsilonSphere, double.PositiveInfinity, ray.Depth + 1);
 							break;
 						}
 				}

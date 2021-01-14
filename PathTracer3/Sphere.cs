@@ -32,11 +32,11 @@ namespace PathTracer3
         {
             var op = Position - ray.Origin;
             var dop = ray.Direction.Dot(op);
-            var D = dop * dop - op.Dot(op) + Radius * Radius;
+            var destination = dop * dop - op.Dot(op) + Radius * Radius;
 
-            if (D < 0) return false;
+            if (destination < 0) return false;
 
-            var sqrtD = Math.Sqrt(D);
+            var sqrtD = Math.Sqrt(destination);
 
             var tmin = dop - sqrtD;
             if (ray.Tmin < tmin && tmin < ray.Tmax)
@@ -46,6 +46,7 @@ namespace PathTracer3
             }
 
             var tmax = dop + sqrtD;
+            // ReSharper disable once InvertIf
             if (ray.Tmin < tmax && tmax < ray.Tmax)
             {
                 ray.Tmax = tmax;

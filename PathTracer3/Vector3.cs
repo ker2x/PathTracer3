@@ -104,6 +104,7 @@ namespace PathTracer3
         public override bool Equals(object obj) => 
             obj != null && Equals((Vector3) obj);
 
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Vector3 v) => 
             Math.Abs(X - v.X) <= double.Epsilon 
@@ -247,5 +248,15 @@ namespace PathTracer3
             Z *= a;
             return this;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Vector3 Zero()
+        {
+            X = 0.0;
+            Y = 0.0;
+            Z = 0.0;
+            return this;
+        }
+        
     }
 }
