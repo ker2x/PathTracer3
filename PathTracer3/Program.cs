@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -13,10 +14,10 @@ namespace PathTracer3
 		{
 			const int width = 1024;
 			const int height = 1024;
-			const int defaultSample = 32;
+			const int defaultSample = 16;
 			const double fov = 0.5135;
-			
-			var startTime = DateTime.Now;
+
+			var startTime = Stopwatch.StartNew();
 			var rng = new Rng();
 			var nbSamples = (args.Length > 0) ? int.Parse(args[0]) / 4 : defaultSample;
 			
@@ -40,7 +41,7 @@ namespace PathTracer3
 			}
 			*/
 			ImageIO.WritePPM(width, height, vList);
-			Console.WriteLine($"\nRun time : {(DateTime.Now - startTime).Seconds} seconds");
+			Console.WriteLine($"\nRun time : {(startTime.Elapsed)}");
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
