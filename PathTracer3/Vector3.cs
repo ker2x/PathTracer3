@@ -18,11 +18,8 @@ namespace PathTracer3
             Z = z;
         }
 
-        public Vector3(double v = 0.0d)
+        public Vector3(double v = 0.0d) : this(v,v,v)
         {
-            X = v;
-            Y = v;
-            Z = v;
         }
 
         public override string ToString() => $"Vector3({X}, {Y}, {Z})";

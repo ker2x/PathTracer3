@@ -11,16 +11,16 @@ namespace PathTracer3
     {
 		private static void Main(string[] args)
 		{
-			const int width = 800;
-			const int height = 600;
-			const int defaultSample = 16;
+			const int width = 1024;
+			const int height = 1024;
+			const int defaultSample = 32;
 			const double fov = 0.5135;
 			
 			var startTime = DateTime.Now;
 			var rng = new Rng();
 			var nbSamples = (args.Length > 0) ? int.Parse(args[0]) / 4 : defaultSample;
 			
-			Console.WriteLine($"Starting {startTime}");
+			Console.WriteLine($"Starting {startTime.Date}");
 
 			var eye = new Vector3(50, 52, 295.6);
 			var gaze = new Vector3(0, -0.042612, -1).Normalize();
@@ -68,6 +68,7 @@ namespace PathTracer3
 		private const double RefractiveIndexOut = 1.0;
 		private const double RefractiveIndexIn  = 1.5;
 
+		// ReSharper disable once HeapView.ObjectAllocation.Evident
 		private static readonly Sphere[] Spheres =
 		{
 			new(1e5,  new Vector3(1e5 + 1, 40.8, 81.6),   new Vector3(),   new Vector3(0.75,0.25,0.25),   Sphere.MaterialType.Diffuse),    //Left
@@ -78,7 +79,7 @@ namespace PathTracer3
 			new(1e5,  new Vector3(50, -1e5 + 81.6, 81.6), new Vector3(),   new Vector3(0.75),                Sphere.MaterialType.Diffuse),	//Top
 			new(16.5, new Vector3(27, 16.5, 47),          new Vector3(),   new Vector3(0.499),               Sphere.MaterialType.Specular),	//Mirror
 			new(16.5, new Vector3(73, 16.5, 78),          new Vector3(),   new Vector3(0.999),               Sphere.MaterialType.Refractive),	//Glass
-			new(600,  new Vector3(50, 681.6 - .27, 81.6), new Vector3(12), new Vector3(),                    Sphere.MaterialType.Diffuse)		//Light
+			new(600,  new Vector3(50, 681.6 - .27, 81.6), new Vector3(12,12,5), new Vector3(),                    Sphere.MaterialType.Diffuse)		//Light
 		};
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -86,16 +87,18 @@ namespace PathTracer3
 			id = 0;
 			var hit = false;
 			
-			for (var i = 0; i < Spheres.Length; ++i) {
-				if (Spheres[i].Intersect(ray)) {
-					hit = true;
-					id = i;
-				}
+			for (var i = 0; i < Spheres.Length; ++i)
+			{
+				if (!Spheres[i].Intersect(ray)) continue;
+				hit = true;
+				id = i;
 			}
 			return hit;
 		}
 
 		[SuppressMessage("ReSharper", "UnusedMember.Global")]
+		[SuppressMessage("ReSharper", "HeapView.DelegateAllocation")]
+		[SuppressMessage("ReSharper", "HeapView.ClosureAllocation")]
 		public static bool Intersect(Ray ray) => 
 			Spheres.Any(t => t.Intersect(ray));
 
