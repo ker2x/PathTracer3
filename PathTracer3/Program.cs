@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using System.Diagnostics.CodeAnalysis;
@@ -14,14 +13,14 @@ namespace PathTracer3
 		{
 			const int width = 1024;
 			const int height = 1024;
-			const int defaultSample = 16;
+			const int defaultSample = 64;
 			const double fov = 0.5135;
 
 			var startTime = Stopwatch.StartNew();
 			var rng = new Rng();
 			var nbSamples = (args.Length > 0) ? int.Parse(args[0]) / 4 : defaultSample;
 			
-			Console.WriteLine($"Starting {startTime}");
+			Console.WriteLine($"Starting {DateTime.Now}");
 
 			var eye = new Vector3(50, 52, 295.6);
 			var gaze = new Vector3(0, -0.042612, -1).Normalize();
@@ -48,7 +47,7 @@ namespace PathTracer3
 		private static void RenderFunc(int y, int w, int h, int nbSamples,
 			                           Vector3 eye, Vector3 gaze,
 									   Vector3 cx,  Vector3 cy,
-									   IList<Vector3> vList, Rng rng) {
+									   Vector3[] vList, Rng rng) {
 
 			var luminance = new Vector3();
 			for (var x = 0; x < w; ++x) {									// row
@@ -84,6 +83,8 @@ namespace PathTracer3
 			new(1e5,  new Vector3(50, 1e5, 81.6),         new Vector3(),   new Vector3(0.75),                Sphere.MaterialType.Diffuse),    //Bottom
 			new(1e5,  new Vector3(50, -1e5 + 81.6, 81.6), new Vector3(),   new Vector3(0.75),                Sphere.MaterialType.Diffuse),	//Top
 			new(16.5, new Vector3(27, 16.5, 47),          new Vector3(),   new Vector3(0.499),               Sphere.MaterialType.Specular),	//Mirror
+			new(6.5, new Vector3(50, 16.5, 97),          new Vector3(),   new Vector3(0.5,0.5,0.999),               Sphere.MaterialType.Refractive),	//Glass
+//			new(3.5, new Vector3(50, 36.5, 157),          new Vector3(),   new Vector3(0.9),               Sphere.MaterialType.Specular),	//Mirror
 			new(16.5, new Vector3(73, 16.5, 78),          new Vector3(),   new Vector3(0.999),               Sphere.MaterialType.Refractive),	//Glass
 			new(600,  new Vector3(50, 681.6 - .27, 81.6), new Vector3(12,12,5), new Vector3(),                    Sphere.MaterialType.Diffuse)		//Light
 		};
@@ -110,29 +111,28 @@ namespace PathTracer3
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 		private static Vector3 Radiance(Ray ray, Rng rng) {
-			//var ray = ray;
-			var l = new Vector3();
-			var f = new Vector3(1.0);
+			var luminance = new Vector3();
+			var color = new Vector3(1.0);
 
 			while (true) {
 				if (!Intersect(ref ray, out var id)) {
-					return l;
+					return luminance;
 				}
 
 				var shape = Spheres[id];
 				var p = ray.Eval(ray.Tmax);
 				var n = (p - shape.Position).Normalize();
 
-				l += f * shape.Emission;
-				f *= shape.Color;
+				luminance += color * shape.Emission;
+				color *= shape.Color;
 
 				// Russian roulette
 				if (ray.Depth > 4) {
 					var continueProbability = shape.Color.Max();
 					if (rng.UniformFloat() >= continueProbability) {
-						return l;
+						return luminance;
 					}
-					f /= continueProbability;
+					color /= continueProbability;
 				}
 
 				// Next path segment
@@ -144,7 +144,7 @@ namespace PathTracer3
 						}
 					case Sphere.MaterialType.Refractive: {
 							var d = Specular.IdealSpecularTransmit(ray.Direction, n, RefractiveIndexOut, RefractiveIndexIn, out var pr, rng);
-							f *= pr;
+							color *= pr;
 							ray = new Ray(p, d, Sphere.EpsilonSphere, double.PositiveInfinity, ray.Depth + 1);
 							break;
 						}

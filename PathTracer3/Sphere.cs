@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace PathTracer3
 {
@@ -28,6 +29,7 @@ namespace PathTracer3
         public Vector3 Color { get; }
         public MaterialType Material { get; }
 
+        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         public bool Intersect(ref Ray ray)
         {
             var op = Position - ray.Origin;
@@ -37,7 +39,7 @@ namespace PathTracer3
             if (destination < 0) return false;
 
             var sqrtD = Math.Sqrt(destination);
-
+            
             var tmin = dop - sqrtD;
             if (ray.Tmin < tmin && tmin < ray.Tmax)
             {
