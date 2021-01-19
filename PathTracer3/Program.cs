@@ -34,9 +34,7 @@ namespace PathTracer3
 			Parallel.For(0, height, column => RenderFunc(column, width, height, nbSamples, eye, gaze, cx, cy, vList, rng));
 			//Uncomment for single thread
 			/*for (int i = 0; i < height; ++i)
-			{
 				RenderFunc(i, width, height, nbSamples, eye, gaze, cx, cy, vList, rng);
-			}
 			*/
 			ImageIO.WritePPM(width, height, vList);
 			Console.WriteLine($"\nRun time : {(startTime.Elapsed)}");
@@ -50,7 +48,7 @@ namespace PathTracer3
 
 			Thread.CurrentThread.Priority = ThreadPriority.Lowest;			//now i can use my laptop while pathtracing <3
 			var luminance = new Vector3();
-			
+
 			for (var rowIndex = 0; rowIndex < width; ++rowIndex) {
 				for (int columnIndex = 0, i = (height - 1 - column) * width + rowIndex; columnIndex < 2; ++columnIndex) {
 					for (var subpixelRow = 0; subpixelRow < 2; ++subpixelRow) {
