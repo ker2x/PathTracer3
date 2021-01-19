@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace PathTracer3
 {
@@ -13,7 +12,7 @@ namespace PathTracer3
 		{
 			const int width = 1024;
 			const int height = 1024;
-			const int defaultSample = 64;
+			const int defaultSample = 2048;
 			const double fov = 0.5135;
 
 			var startTime = Stopwatch.StartNew();
@@ -49,6 +48,7 @@ namespace PathTracer3
 									   Vector3 cx,  Vector3 cy,
 									   Vector3[] vList, Rng rng) {
 
+			Thread.CurrentThread.Priority = ThreadPriority.Lowest;			//now i can use my laptop while pathtracing <3
 			var luminance = new Vector3();
 			for (var x = 0; x < w; ++x) {									// row
 				for (int sy = 0, i = (h - 1 - y) * w + x; sy < 2; ++sy) {	//column
@@ -83,10 +83,11 @@ namespace PathTracer3
 			new(1e5,  new Vector3(50, 1e5, 81.6),         new Vector3(),   new Vector3(0.75),                Sphere.MaterialType.Diffuse),    //Bottom
 			new(1e5,  new Vector3(50, -1e5 + 81.6, 81.6), new Vector3(),   new Vector3(0.75),                Sphere.MaterialType.Diffuse),	//Top
 			new(16.5, new Vector3(27, 16.5, 47),          new Vector3(),   new Vector3(0.499),               Sphere.MaterialType.Specular),	//Mirror
-			new(6.5, new Vector3(50, 16.5, 97),          new Vector3(),   new Vector3(0.5,0.5,0.999),               Sphere.MaterialType.Refractive),	//Glass
+			new(6.5, new Vector3(50, 16.5, 81),          new Vector3(),   new Vector3(0.5,0.5,0.999),               Sphere.MaterialType.Refractive),	//Glass
 //			new(3.5, new Vector3(50, 36.5, 157),          new Vector3(),   new Vector3(0.9),               Sphere.MaterialType.Specular),	//Mirror
 			new(16.5, new Vector3(73, 16.5, 78),          new Vector3(),   new Vector3(0.999),               Sphere.MaterialType.Refractive),	//Glass
-			new(600,  new Vector3(50, 681.6 - .27, 81.6), new Vector3(12,12,5), new Vector3(),                    Sphere.MaterialType.Diffuse)		//Light
+			//new(600,  new Vector3(50, 681.6 - .27, 81.6), new Vector3(2,2,1), new Vector3(),                    Sphere.MaterialType.Diffuse),		//Light
+			new(5,  new Vector3(50, 1.6, 81), new Vector3(20,20,20), new Vector3(),                    Sphere.MaterialType.Diffuse)		//Light
 		};
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -103,16 +104,18 @@ namespace PathTracer3
 			return hit;
 		}
 
+/*
 		[SuppressMessage("ReSharper", "UnusedMember.Global")]
 		[SuppressMessage("ReSharper", "HeapView.DelegateAllocation")]
 		[SuppressMessage("ReSharper", "HeapView.ClosureAllocation")]
 		public static bool Intersect(Ray ray) => 
 			Spheres.Any(t => t.Intersect(ref ray));
-
+*/
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
 		private static Vector3 Radiance(Ray ray, Rng rng) {
 			var luminance = new Vector3();
 			var color = new Vector3(1.0);
+			const int minBounce = 4;
 
 			while (true) {
 				if (!Intersect(ref ray, out var id)) {
@@ -127,9 +130,10 @@ namespace PathTracer3
 				color *= shape.Color;
 
 				// Russian roulette
-				if (ray.Depth > 4) {
+				if (ray.Depth > minBounce) {
 					var continueProbability = shape.Color.Max();
-					if (rng.UniformFloat() >= continueProbability) {
+					if (rng.UniformFloat() >= continueProbability) { 
+//					if (true) {
 						return luminance;
 					}
 					color /= continueProbability;

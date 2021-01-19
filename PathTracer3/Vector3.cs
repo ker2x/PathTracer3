@@ -104,21 +104,21 @@ namespace PathTracer3
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(Vector3 v) => 
-            Math.Abs(X - v.X) <= double.Epsilon 
-            && Math.Abs(Y - v.Y) <= double.Epsilon 
-            && Math.Abs(Z - v.Z) <= double.Epsilon;
+            Math.Abs(X - v.X) <= double.Epsilon * 10 
+            && Math.Abs(Y - v.Y) <= double.Epsilon * 10
+            && Math.Abs(Z - v.Z) <= double.Epsilon * 10;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator ==(Vector3 v1, Vector3 v2) => 
-            Math.Abs(v1.X - v2.X) <= double.Epsilon 
-            && Math.Abs(v1.Y - v2.Y) <= double.Epsilon 
-            && Math.Abs(v1.Z - v2.Z) <= double.Epsilon;
+            Math.Abs(v1.X - v2.X) <= double.Epsilon * 10
+            && Math.Abs(v1.Y - v2.Y) <= double.Epsilon * 10
+            && Math.Abs(v1.Z - v2.Z) <= double.Epsilon * 10;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator !=(Vector3 v1, Vector3 v2) => 
-            Math.Abs(v1.X - v2.X) > double.Epsilon 
-            || Math.Abs(v1.Y - v2.Y) > double.Epsilon 
-            || Math.Abs(v1.Z - v2.Z) > double.Epsilon;
+            Math.Abs(v1.X - v2.X) > double.Epsilon  * 10
+            || Math.Abs(v1.Y - v2.Y) > double.Epsilon * 10
+            || Math.Abs(v1.Z - v2.Z) > double.Epsilon * 10;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool operator <(Vector3 v1, Vector3 v2) => 
