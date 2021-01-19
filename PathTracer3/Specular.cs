@@ -13,7 +13,8 @@ namespace PathTracer3
             return r0 + (1 - r0) * c * c * c * c * c;
         }
 
-        public static Vector3 IdealSpecularReflect(Vector3 d, Vector3 n) => d - 2.0 * n.Dot(d) * n;
+        public static Vector3 IdealSpecularReflect(Vector3 d, Vector3 n) 
+            => d - 2.0 * n.Dot(d) * n;
 
         public static Vector3 IdealSpecularTransmit(Vector3 d, Vector3 n, double nOut, double nIn, 
             out double pr, Rng rng)

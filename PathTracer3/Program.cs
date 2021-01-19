@@ -12,7 +12,7 @@ namespace PathTracer3
 		{
 			const int width = 1024;
 			const int height = 1024;
-			const int defaultSample = 2048;
+			const int defaultSample = 32;
 			const double fov = 0.5135;
 
 			var startTime = Stopwatch.StartNew();
@@ -31,7 +31,7 @@ namespace PathTracer3
 				vList[index] = new Vector3();
 			}
 
-			Parallel.For(0, height, y => RenderFunc(y, width, height, nbSamples, eye, gaze, cx, cy, vList, rng));
+			Parallel.For(0, height, column => RenderFunc(column, width, height, nbSamples, eye, gaze, cx, cy, vList, rng));
 			//Uncomment for single thread
 			/*for (int i = 0; i < height; ++i)
 			{
@@ -43,24 +43,25 @@ namespace PathTracer3
 		}
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
-		private static void RenderFunc(int y, int w, int h, int nbSamples,
+		private static void RenderFunc(int column, int width, int height, int nbSamples,
 			                           Vector3 eye, Vector3 gaze,
 									   Vector3 cx,  Vector3 cy,
 									   Vector3[] vList, Rng rng) {
 
 			Thread.CurrentThread.Priority = ThreadPriority.Lowest;			//now i can use my laptop while pathtracing <3
 			var luminance = new Vector3();
-			for (var x = 0; x < w; ++x) {									// row
-				for (int sy = 0, i = (h - 1 - y) * w + x; sy < 2; ++sy) {	//column
-					for (var sx = 0; sx < 2; ++sx) {						//subpixel row
+			
+			for (var rowIndex = 0; rowIndex < width; ++rowIndex) {
+				for (int columnIndex = 0, i = (height - 1 - column) * width + rowIndex; columnIndex < 2; ++columnIndex) {
+					for (var subpixelRow = 0; subpixelRow < 2; ++subpixelRow) {
 						luminance.Zero();
-						for (var s = 0; s < nbSamples; ++s) {				//subpixel column
+						for (var subpixelColumn = 0; subpixelColumn < nbSamples; ++subpixelColumn) {
 							var u1 = 2.0 * rng.UniformFloat();
 							var u2 = 2.0 * rng.UniformFloat();
 							var dx = u1 < 1 ? Math.Sqrt(u1) - 1.0 : 1.0 - Math.Sqrt(2.0 - u1);
 							var dy = u2 < 1 ? Math.Sqrt(u2) - 1.0 : 1.0 - Math.Sqrt(2.0 - u2);
-							var d = cx * (((sx + 0.5 + dx) / 2 + x) / w - 0.5) +
-							        cy * (((sy + 0.5 + dy) / 2 + y) / h - 0.5) + gaze;
+							var d = cx * (((subpixelRow + 0.5 + dx) / 2 + rowIndex) / width - 0.5) +
+							        cy * (((columnIndex + 0.5 + dy) / 2 + column) / height - 0.5) + gaze;
 							luminance += Radiance(new Ray(eye + d * 130, d.Normalize(), Sphere.EpsilonSphere), rng) * (1.0 / nbSamples);
 						}
 						vList[i] += 0.25 * Vector3.Clamp(luminance);
@@ -129,11 +130,10 @@ namespace PathTracer3
 				luminance += color * shape.Emission;
 				color *= shape.Color;
 
-				// Russian roulette
+				// Russian roulette. Keep going until it's not contributing enough.
 				if (ray.Depth > minBounce) {
 					var continueProbability = shape.Color.Max();
 					if (rng.UniformFloat() >= continueProbability) { 
-//					if (true) {
 						return luminance;
 					}
 					color /= continueProbability;
@@ -141,12 +141,12 @@ namespace PathTracer3
 
 				// Next path segment
 				switch (shape.Material) {
-					case Sphere.MaterialType.Specular: {
+					case Sphere.MaterialType.Specular: {	//Mirror
 							var d = Specular.IdealSpecularReflect(ray.Direction, n);
 							ray = new Ray(p, d, Sphere.EpsilonSphere, double.PositiveInfinity, ray.Depth + 1);
 							break;
 						}
-					case Sphere.MaterialType.Refractive: {
+					case Sphere.MaterialType.Refractive: {	// Glass
 							var d = Specular.IdealSpecularTransmit(ray.Direction, n, RefractiveIndexOut, RefractiveIndexIn, out var pr, rng);
 							color *= pr;
 							ray = new Ray(p, d, Sphere.EpsilonSphere, double.PositiveInfinity, ray.Depth + 1);
