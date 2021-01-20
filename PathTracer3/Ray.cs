@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 
 namespace PathTracer3
 {
@@ -14,15 +13,15 @@ namespace PathTracer3
             Depth = depth;
         }
 
-        public Vector3 Origin { get; }
+        public Vector3 Origin    { get; }
         public Vector3 Direction { get; }
-        public double Tmin { get; }
-        public double Tmax { get; set; }
-        public int Depth { get; }
+        public int Depth         { get; }
+        public double Tmin       { get; }
+        public double Tmax       { get; set; }
 
-        public Vector3 Eval(double t) => Origin + Direction * t;
+        public readonly Vector3 Eval(double t) => Origin + Direction * t;
 
         [SuppressMessage("ReSharper", "HeapView.BoxingAllocation")]
-        public override string ToString() => $"Ray(O: {Origin}, D: {Direction})";
+        public override readonly string ToString() => $"Ray(O: {Origin}, D: {Direction})";
     }
 }

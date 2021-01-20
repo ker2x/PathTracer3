@@ -6,13 +6,12 @@ namespace PathTracer3
 {
     public class Rng
     {
-        /* it look weird but this is the Rng constructor */
+        /* it look weird but this is the constructor */
         [SuppressMessage("ReSharper", "HeapView.ObjectAllocation.Evident")] 
         private readonly ThreadLocal< Random > _rnd = new(
-            () => new Random(Thread.CurrentThread.ManagedThreadId));
+            () => new Random(Thread.CurrentThread.ManagedThreadId)
+            );
 
-        public double UniformFloat() {
-            return _rnd.Value.NextDouble();
-        }
+        public double UniformFloat() => _rnd.Value.NextDouble();
     }
 }
