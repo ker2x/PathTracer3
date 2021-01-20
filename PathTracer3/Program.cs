@@ -12,7 +12,7 @@ namespace PathTracer3
 		{
 			const int width = 1024;
 			const int height = 1024;
-			const int defaultSample = 32;
+			const int defaultSample = 16;
 			const double fov = 0.5135;
 
 			var startTime = Stopwatch.StartNew();
@@ -82,11 +82,11 @@ namespace PathTracer3
 			new(1e5,  new Vector3(50, 1e5, 81.6),         new Vector3(),   new Vector3(0.75),                Sphere.MaterialType.Diffuse),    //Bottom
 			new(1e5,  new Vector3(50, -1e5 + 81.6, 81.6), new Vector3(),   new Vector3(0.75),                Sphere.MaterialType.Diffuse),	//Top
 			new(16.5, new Vector3(27, 16.5, 47),          new Vector3(),   new Vector3(0.499),               Sphere.MaterialType.Specular),	//Mirror
-			new(6.5, new Vector3(50, 16.5, 81),          new Vector3(),   new Vector3(0.5,0.5,0.999),               Sphere.MaterialType.Refractive),	//Glass
+			new(6.5, new Vector3(50, 12.5, 81),          new Vector3(),   new Vector3(0.5,0.5,0.999),               Sphere.MaterialType.Refractive),	//Glass
 //			new(3.5, new Vector3(50, 36.5, 157),          new Vector3(),   new Vector3(0.9),               Sphere.MaterialType.Specular),	//Mirror
 			new(16.5, new Vector3(73, 16.5, 78),          new Vector3(),   new Vector3(0.999),               Sphere.MaterialType.Refractive),	//Glass
 			//new(600,  new Vector3(50, 681.6 - .27, 81.6), new Vector3(2,2,1), new Vector3(),                    Sphere.MaterialType.Diffuse),		//Light
-			new(5,  new Vector3(50, 1.6, 81), new Vector3(20,20,20), new Vector3(),                    Sphere.MaterialType.Diffuse)		//Light
+			new(6.5,  new Vector3(50, -3, 81), new Vector3(30,30,30), new Vector3(),                    Sphere.MaterialType.Diffuse)		//Light
 		};
 
 		[MethodImpl(MethodImplOptions.AggressiveOptimization)]
@@ -114,7 +114,8 @@ namespace PathTracer3
 		private static Vector3 Radiance(Ray ray, Rng rng) {
 			var luminance = new Vector3();
 			var color = new Vector3(1.0);
-			const int minBounce = 4;
+			const int minBounce = 5;
+			const int maxBounce = 30;
 
 			while (true) {
 				if (!Intersect(ref ray, out var id)) {
@@ -135,6 +136,11 @@ namespace PathTracer3
 						return luminance;
 					}
 					color /= continueProbability;
+				}
+
+				if (ray.Depth > maxBounce)
+				{
+					return luminance;
 				}
 
 				// Next path segment
